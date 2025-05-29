@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Box Data Entry</title>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    deleteDoc,
+    doc
+  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCFCs7N_osiwQqkUYClI_M6yN90c7i4hlI",
+    authDomain: "tajindiapackagingdataentry.firebaseapp.com",
+    projectId: "tajindiapackagingdataentry",
+    storageBucket: "tajindiapackagingdataentry.firebasestorage.app",
+    messagingSenderId: "286686871569",
+    appId: "1:286686871569:web:3b478c47563c2dd741f1b0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  async function loadData() {
+    const querySnapshot = await getDocs(collection(db, "boxes"));
+    const tableBody = document.getElementById("boxTableBody");
+    tableBody.innerHTML = "";
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const row = `
+        <tr data-id="${docSnap.id}">
+   <td>${data.name}</td>
+          <td>${data.size}</td>
+          <td>${data.weight}</td>
+          <td>${data.price}</td>
+          <td>${data.ply}</td>
+          <td><button class="delete-btn">🗑</button></td>
+        </tr>`;
+      tableBody.innerHTML += row;
+    });
+
+    // Add delete event to all buttons
+    document.querySelectorAll(".delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async function () {
+        const row = btn.closest("tr");
+        const id = row.getAttribute("data-id");
+        await deleteDoc(doc(db, "boxes", id));
+        await loadData(); // refresh table
+      });
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("boxForm");
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const name = form.name.value;
+      const size = form.size.value;
+      const weight = form.weight.value;
+      const price = form.price.value;
+      const ply = form.ply.value;
+
+      await addDoc(collection(db, "boxes"), {
+  name, size, weight, price, ply
+      });
+
+      form.reset();
+      await loadData();
+    });
+
+    // Column search
+    document.querySelectorAll(".search-input").forEach((input, index) => {
+      input.addEventListener("input", function () {
+        const value = input.value.toLowerCase();
+        const rows = document.querySelectorAll("#boxTableBody tr");
+        rows.forEach(row => {
+          const cell = row.children[index].textContent.toLowerCase();
+          row.style.display = cell.includes(value) ? "" : "none";
+        });
+      });
+    });
+
+    loadData();
+  });
+</script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    input, button {
+      margin: 5px 0;
+      padding: 8px;
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th input {
+      width: 90%;
+      padding: 4px;
+    }
+    .form-section {
+      margin-bottom: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📦 Box Data Entry App</h2>
+
+  <div class="form-section">
+    <form id="boxForm">
+      <input type="text" name="name" placeholder="Box Name" required />
+      <input type="text" name="size" placeholder="Size" required />
+      <input type="text" name="weight" placeholder="Weight" required />
+      <input type="text" name="price" placeholder="Price" required />
+      <input type="text" name="ply" placeholder="Ply" required />
+      <button type="submit">➕ Add Box</button>
+    </form>
+  </div>
+
+  <table>
+   <thead>
+  <tr>
+    <th>Name<br><input type="text" class="search-input" placeholder="🔍 Search Name"/></th>
+    <th>Size<br><input type="text" class="search-input" placeholder="🔍 Search Size"/></th>
+    <th>Weight<br><input type="text" class="search-input" placeholder="🔍 Search Weight"/></th>
+    <th>Price<br><input type="text" class="search-input" placeholder="🔍 Search Price"/></th>
+    <th>Ply<br><input type="text" class="search-input" placeholder="🔍 Search Ply"/></th>
+    <th>Delete</th>
+  </tr>
+</thead>    <tbody id="boxTableBody">
+      <!-- Data will appear here -->
+    </tbody>
+  </table>
+</body>
+</html>
